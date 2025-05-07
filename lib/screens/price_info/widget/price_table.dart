@@ -3,23 +3,23 @@ import 'package:v4/screens/common/style/text_styles.dart';
 import 'package:v4/screens/price_info/widget/tooltip.dart';
 
 class PriceTableWidget extends StatelessWidget {
-  final List<List<String>> dataRows; // Dynamic data rows
+  final List<List<String>> dataRows;
 
-  PriceTableWidget({
+  const PriceTableWidget({
+    super.key,
     required this.dataRows,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTitleRow(dataRows[0]),
-          _buildDataGrid(context),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTitleRow(dataRows[0]),
+        const SizedBox(height: 16),
+        _buildDataGrid(context, startIndex: 1),
+        if (dataRows.length > 4) _buildDataGrid(context, startIndex: 4),
+      ],
     );
   }
 
@@ -38,30 +38,16 @@ class PriceTableWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Text(
-                titleData[0],
-                style: AppTextStyle.light14,
-              ),
-              Spacer(),
-              Text(
-                titleData[1],
-                style: AppTextStyle.semibold25,
-              ),
-              Text(
-                titleData[2],
-                style: AppTextStyle.medium16,
-              ),
+              Text(titleData[0], style: AppTextStyle.light14),
+              const Spacer(),
+              Text(titleData[1], style: AppTextStyle.semibold25),
+              Text(titleData[2], style: AppTextStyle.medium16),
             ],
           ),
           Row(
             children: [
-              Text(
-                titleData[3],
-                style: AppTextStyle.light14,
-              ),
-              const SizedBox(
-                width: 4,
-              ),
+              Text(titleData[3], style: AppTextStyle.light14),
+              const SizedBox(width: 4),
               Text(
                 titleData[4],
                 style: AppTextStyle.regular14.copyWith(
@@ -79,99 +65,106 @@ class PriceTableWidget extends StatelessWidget {
     );
   }
 
-  // 데이터를 2행 3열의 그리드로 보여주는 함수
-  Widget _buildDataGrid(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      children: [
-        for (int i = 1; i < dataRows.length; i++)
-          _buildDataCell(context, dataRows[i][0], dataRows[i][1],
-              dataRows[i].length > 2 ? dataRows[i][2] : '')
-      ],
+  Widget _buildDataGrid(BuildContext context, {required int startIndex}) {
+    List<Widget> dataCells = [];
+
+    for (int i = startIndex; i < startIndex + 3 && i < dataRows.length; i++) {
+      dataCells.add(
+        Expanded(
+          child: _buildDataCell(
+            context,
+            dataRows[i][0],
+            dataRows[i][1],
+            dataRows[i].length > 2 ? dataRows[i][2] : '',
+          ),
+        ),
+      );
+    }
+
+    while (dataCells.length < 3) {
+      dataCells.add(Expanded(child: Container()));
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: dataCells,
+      ),
     );
   }
 
-  // 데이터를 포함하는 셀을 구성하는 함수
-  Widget _buildDataCell(
-    BuildContext context, String title, String value, String? additionalValue) {
-  return Container(
-    width: (MediaQuery.of(context).size.width - 32) / 3,
-    height: 85,
-    decoration: const BoxDecoration(
-      border: Border(
-        bottom: BorderSide(color: Color(0xFFDDE1E6), width: 1),
+  Widget _buildDataCell(BuildContext context, String title, String value,
+      String? additionalValue) {
+    return Container(
+      height: 85,
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFDDE1E6), width: 1),
+        ),
       ),
-    ),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: Text(
-                title,
-                style: title.length > 8 ? AppTextStyle.light12 : AppTextStyle.light14,
-                softWrap: true, // 줄바꿈 설정
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.visible, // 텍스트가 영역을 벗어날 경우 줄바꿈
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  title,
+                  style: title.length > 8
+                      ? AppTextStyle.light12
+                      : AppTextStyle.light14,
+                  softWrap: true,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.visible,
+                ),
+              ),
+              _buildTooltipIfNeeded(title),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: value.length > 10
+                ? AppTextStyle.medium16
+                : AppTextStyle.medium18,
+            textAlign: TextAlign.center,
+          ),
+          if (additionalValue != null && additionalValue.isNotEmpty) ...[
+            const SizedBox(height: 1),
+            Text(
+              additionalValue,
+              style: TextStyle(
+                fontFamily: 'Pretendard',
+                fontWeight: FontWeight.w400,
+                fontSize: 10,
+                color: additionalValue.startsWith('▲')
+                    ? const Color(0xFFEB5C5C)
+                    : additionalValue.startsWith('▼')
+                        ? const Color(0xFF2478C7)
+                        : Colors.black,
               ),
             ),
-            if (title == '계절 지수')
-              TooltipWidget(
-                  message:
-                      '1보다 크면 현재 가격이 연평균보다 높음.\n1보다 작으면 현재 가격이 연평균보다 낮음'),
-            if (title == '공급 안정성 지수')
-              TooltipWidget(message: '10 이상: 매우 안정\n5 ~ 10: 보통\n5 미만: 불안정'),
-            if (title == '일관성 지수')
-              TooltipWidget(
-                  message:
-                      '0.9 이상: 일관된 예측\n0.75 ~ 0.90: 약간의 변동성\n0.75 미만: 변동폭이 클 수 있음'),
-            if (title == '계절 보정가') TooltipWidget(message: '계절 지수를 반영한 보정가'),
-            if (title == '신호 지수')
-              TooltipWidget(
-                  message:
-                      '1.5 이상: 강한 상승 신호\n-1.5 ~ 1.5: 신호 없음\n-1.5 미만: 강한 하락 신호'),
           ],
-        ),
-        const SizedBox(height: 4),
-        if (additionalValue == null || additionalValue.isEmpty)
-          Container(
-            height: 40, // 중앙 정렬을 위해 빈 공간을 확보
-            alignment: Alignment.center,
-            child: Text(
-              value,
-              style: value.length > 10
-                  ? AppTextStyle.medium16
-                  : AppTextStyle.medium18,
-              textAlign: TextAlign.center,
-            ),
-          )
-        else
-          Text(value,
-              style: value.length > 10
-                  ? AppTextStyle.medium16
-                  : AppTextStyle.medium18),
-        if (additionalValue != null && additionalValue.isNotEmpty) ...[
-          const SizedBox(height: 1), // 줄 간격을 줄이기 위해 크기 조정
-          Text(
-            additionalValue,
-            style: TextStyle(
-              fontFamily: 'Pretendard',
-              fontWeight: FontWeight.w400,
-              fontSize: 10,
-              color: additionalValue.startsWith('▲')
-                  ? const Color(0xFFEB5C5C)
-                  : additionalValue.startsWith('▼')
-                      ? const Color(0xFF2478C7)
-                      : Colors.black,
-            ),
-          ),
         ],
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
+  Widget _buildTooltipIfNeeded(String title) {
+    Map<String, String> tooltips = {
+      '계절 지수': '1보다 크면 현재 가격이 연평균보다 높음.\n1보다 작으면 현재 가격이 연평균보다 낮음',
+      '공급 안정성 지수': '10 이상: 매우 안정\n5 ~ 10: 보통\n5 미만: 불안정',
+      '일관성 지수': '0.9 이상: 일관된 예측\n0.75 ~ 0.90: 약간의 변동성\n0.75 미만: 변동폭이 클 수 있음',
+      '계절 보정가': '계절 지수를 반영한 보정가',
+      '신호 지수': '1.5 이상: 강한 상승 신호\n-1.5 ~ 1.5: 신호 없음\n-1.5 미만: 강한 하락 신호',
+    };
+
+    if (tooltips.containsKey(title)) {
+      return TooltipWidget(message: tooltips[title]!);
+    }
+    return Container();
+  }
 }

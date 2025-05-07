@@ -7,11 +7,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onMenuPressed;
 
   const CustomAppBar({
-    Key? key,
+    super.key,
     required this.color1,
     required this.color2,
     required this.onMenuPressed,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,13 +19,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.menu, color: Colors.white),
+        icon: const Icon(Icons.menu, color: Colors.white),
         onPressed: onMenuPressed,
       ),
       centerTitle: true,
       title: GestureDetector(
         onTap: () {
-          context.go('/'); 
+          context.go('/');
         },
         child: Image.asset(
           'assets/png/bgood_bi_w.png',

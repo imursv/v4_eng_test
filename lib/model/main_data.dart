@@ -19,7 +19,7 @@ class MainData {
       optimalPurchaseTime: json['optimal_purchase_time'] ?? '',
       priceInfo: PriceInfo.fromJson(json['price_info'] ?? {}),
       growthInfo: GrowthInfo.fromJson(json['growth_info'] ?? {}),
-      cropInfo: CropInfo.fromJson(json['harvest_info'] ?? {}),
+      cropInfo: CropInfo.fromJson(json['crop_info'] ?? {}),
     );
   }
 }
@@ -83,10 +83,13 @@ class PriceInfo {
       amountValue: json['amount_value']?.toDouble() ?? 0.0,
       percentageChangeValue: json['percentage_change_value']?.toDouble() ?? 0.0,
       accuracy: json['accuracy']?.toDouble() ?? 0.0,
-      outOfRangeProbability: json['out_of_range_probability']?.toDouble() ?? 0.0,
+      outOfRangeProbability:
+          json['out_of_range_probability']?.toDouble() ?? 0.0,
       stabilityProbability: json['stability_probability']?.toDouble() ?? 0.0,
-      actualPrices: List<double?>.from((json['actual_prices'] ?? []).map((x) => x?.toDouble())),
-      predictedPrices: List<double?>.from((json['predicted_prices'] ?? []).map((x) => x?.toDouble())),
+      actualPrices: List<double?>.from(
+          (json['actual_prices'] ?? []).map((x) => x?.toDouble())),
+      predictedPrices: List<double?>.from(
+          (json['predicted_prices'] ?? []).map((x) => x?.toDouble())),
       date: List<String>.from(json['date'] ?? []),
     );
   }
@@ -169,7 +172,8 @@ class GrowthInfo {
       averageComparisonValue: json['average_comparison_value'],
       averageComparisonRate: json['average_comparison_rate'],
       actualTemperatures: List<double?>.from(json['actual_temperatures'] ?? []),
-      predictedTemperatures: List<double?>.from(json['predicted_temperatures'] ?? []),
+      predictedTemperatures:
+          List<double?>.from(json['predicted_temperatures'] ?? []),
       date: List<String>.from(json['date'] ?? []),
     );
   }
@@ -188,8 +192,8 @@ class CropInfo {
   final dynamic range;
   final dynamic rangeOutProbability;
   final dynamic stabilityProbability;
-  final List<dynamic?> actualProductions;
-  final List<dynamic?> predictedProductions;
+  final List<dynamic> actualProductions;
+  final List<dynamic> predictedProductions;
   final List<String> date;
 
   CropInfo({
@@ -224,8 +228,9 @@ class CropInfo {
       range: json['range'],
       rangeOutProbability: json['range_out_probability'],
       stabilityProbability: json['stability_probability'],
-      actualProductions: List<dynamic?>.from(json['actual_productions'] ?? []),
-      predictedProductions: List<dynamic?>.from(json['predicted_productions'] ?? []),
+      actualProductions: List<dynamic>.from(json['actual_productions'] ?? []),
+      predictedProductions:
+          List<dynamic>.from(json['predicted_productions'] ?? []),
       date: List<String>.from(json['date'] ?? []),
     );
   }

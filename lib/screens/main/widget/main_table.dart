@@ -4,7 +4,7 @@ import 'package:v4/screens/common/style/text_styles.dart';
 class MainTableWidget extends StatelessWidget {
   final List<List<String>> dataRows; // Dynamic data rows
 
-  MainTableWidget({required this.dataRows});
+  const MainTableWidget({super.key, required this.dataRows});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,6 @@ class MainTableWidget extends StatelessWidget {
       ],
     );
   }
-
 
   // 데이터를 1행 3열로 보여주는 함수
   Widget _buildDataGrid(BuildContext context, {int startIndex = 2}) {
@@ -43,43 +42,46 @@ class MainTableWidget extends StatelessWidget {
 
   // 데이터를 포함하는 셀을 구성하는 함수
   Widget _buildDataCell(BuildContext context, String title, String value) {
-  // 기본 색상
-  Color valueColor = Colors.black; 
+    // 기본 색상
+    Color valueColor = Colors.black;
 
-  if (value.isNotEmpty) {
-    if (value.startsWith('▼')) {
-      valueColor = Color(0xFF2478C7);
-    } else if (value.startsWith('▲')) {
-      valueColor = Color(0xFFEB5C5C); 
+    if (value.isNotEmpty) {
+      if (value.startsWith('▼')) {
+        valueColor = const Color(0xFF2478C7);
+      } else if (value.startsWith('▲')) {
+        valueColor = const Color(0xFFEB5C5C);
+      }
     }
-  }
 
-  return Expanded(
-    child: Container(
-      height: 70,
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFDDE1E6), width: 1),
+    return Expanded(
+      child: Container(
+        height: 70,
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Color(0xFFDDE1E6), width: 1),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              style: title.length > 8
+                  ? AppTextStyle.light12
+                  : AppTextStyle.light14,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: value.length > 10
+                  ? AppTextStyle.medium12.copyWith(color: valueColor)
+                  : AppTextStyle.medium16.copyWith(color: valueColor),
+            ),
+          ],
         ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: title.length > 8 ? AppTextStyle.light12 : AppTextStyle.light14,
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 4),
-          Text(
-            value,
-            style: value.length > 10 ? AppTextStyle.medium12.copyWith(color: valueColor) : AppTextStyle.medium16.copyWith(color: valueColor),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
+    );
+  }
 }

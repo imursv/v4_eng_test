@@ -1,45 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:v4/screens/common/style/text_styles.dart';
+import 'package:intl/intl.dart';
 
 class RegionalProdWidget extends StatelessWidget {
   final Map<String, Map<String, dynamic>> regionalProduction;
 
   const RegionalProdWidget({
-    Key? key,
+    super.key,
     required this.regionalProduction,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal, // 가로 스크롤 허용
-      child: Column(
-        children: [
-          // 테이블 헤더
-          _buildTableHeader(),
-          // 지역별 데이터 행
-          ...regionalProduction.entries.map((entry) {
-            return _buildTableRow(
-              region: entry.key,
-              data: entry.value,
-            );
-          }).toList(),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double maxWidth =
+            constraints.maxWidth > 1200 ? 1200 : constraints.maxWidth;
+        double cellWidth = maxWidth / 4; // 셀의 개수에 따라 조정
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: maxWidth,
+            child: Column(
+              children: [
+                _buildTableHeader(cellWidth),
+                ...regionalProduction.entries.map((entry) {
+                  return _buildTableRow(
+                    region: entry.key,
+                    data: entry.value,
+                    cellWidth: cellWidth,
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   // 테이블 헤더 구성
-  Widget _buildTableHeader() {
+  Widget _buildTableHeader(double cellWidth) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      color: Color(0xFFF8F8F8),
+      color: const Color(0xFFF8F8F8),
       child: Row(
         children: [
-          _buildHeaderCell('Region', width: 80),
-          _buildHeaderCell('Area(ha)', width: 90),
-          _buildHeaderCell('Yield(ton)', width: 90),
-          _buildHeaderCell('Yield per 10a(kg)', width: 100),
+          _buildHeaderCell('Region', width: cellWidth),
+          _buildHeaderCell('Area(ha)', width: cellWidth),
+          _buildHeaderCell('Yield(ton)', width: cellWidth),
+          _buildHeaderCell('Yield per 10a(kg)', width: cellWidth),
         ],
       ),
     );
@@ -47,7 +58,7 @@ class RegionalProdWidget extends StatelessWidget {
 
   // 개별 헤더 셀 생성
   static Widget _buildHeaderCell(String title, {required double width}) {
-    return Container(
+    return SizedBox(
       width: width,
       child: Center(
         child: Text(
@@ -64,7 +75,10 @@ class RegionalProdWidget extends StatelessWidget {
   Widget _buildTableRow({
     required String region,
     required Map<String, dynamic> data,
+    required double cellWidth,
   }) {
+    final numberFormat = NumberFormat.decimalPattern(); // 로케일에 맞는 숫자 포맷터
+
     String regionText = region == '경기도'
         ? 'Gyeonggi'
         : region == '강원도'
@@ -96,10 +110,13 @@ class RegionalProdWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _buildDataCell(regionText, width: 80), // 변환된 시도 이름
-          _buildDataCell('${data['area']}', width: 90), // 면적
-          _buildDataCell('${data['production']}', width: 90), // 생산량
-          _buildDataCell('${data['per_10a']}', width: 100), // 10a당 생산량
+          _buildDataCell(regionText, width: cellWidth), // 변환된 시도 이름
+          _buildDataCell(numberFormat.format(data['area']),
+              width: cellWidth), // 면적
+          _buildDataCell(numberFormat.format(data['production']),
+              width: cellWidth), // 생산량
+          _buildDataCell(numberFormat.format(data['per_10a']),
+              width: cellWidth), // 10a당 생산량
         ],
       ),
     );
@@ -107,7 +124,7 @@ class RegionalProdWidget extends StatelessWidget {
 
   // 개별 데이터 셀 생성
   Widget _buildDataCell(String value, {required double width}) {
-    return Container(
+    return SizedBox(
       width: width,
       child: Center(
         child: Text(

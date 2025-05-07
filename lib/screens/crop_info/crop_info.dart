@@ -1,7 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:v4/data/mock/crop_mock.dart';
-import 'package:v4/screens/common/appbar.dart';
 import 'package:v4/screens/common/drawer.dart';
 import 'package:v4/screens/common/footer.dart';
 import 'package:v4/screens/common/header.dart';
@@ -17,6 +16,7 @@ import 'package:v4/screens/crop_info/widget/regional_bar_chart.dart';
 import 'package:v4/screens/crop_info/widget/regional_prod_table.dart';
 import 'package:v4/screens/crop_info/widget/statistic_chart.dart';
 import 'package:v4/screens/utils/format/number_format.dart';
+import 'package:v4/widgets/custom_app_bar.dart';
 
 class CropInfoPage extends StatefulWidget {
   const CropInfoPage({super.key});
@@ -28,34 +28,34 @@ class CropInfoPage extends StatefulWidget {
 class _CropInfoPageState extends State<CropInfoPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   //공통
+  String selectedLanguage = '한국어';
   Map<String, dynamic> cropMockData = {};
   String selectedProduct = "들깨";
   String selectedCountry = "한국";
   bool isContinuousView = false; //그래프 이어서 보기 - '평년'버튼 유무 때문에 필요
   final List<Color> buttonColors = [
-    Color(0xFF0084FF),
-    Color(0xFF9568EE),
-    Color(0xFFFF9500),
-    Color(0xFFF8D32D),
-    Color(0xFF78B060),
-    Color(0xFF0084FF),
-    Color(0xFF9568EE),
-    Color(0xFFFF9500),
-    Color(0xFFF8D32D),
-    Color(0xFF78B060),
+    const Color(0xFF0084FF),
+    const Color(0xFF9568EE),
+    const Color(0xFFFF9500),
+    const Color(0xFFF8D32D),
+    const Color(0xFF78B060),
+    const Color(0xFF0084FF),
+    const Color(0xFF9568EE),
+    const Color(0xFFFF9500),
+    const Color(0xFFF8D32D),
+    const Color(0xFF78B060),
+    const Color(0xFF0084FF),
+    const Color(0xFF9568EE),
+    const Color(0xFFFF9500),
+    const Color(0xFFF8D32D),
+    const Color(0xFF78B060),
+    const Color(0xFF0084FF),
+    const Color(0xFF9568EE),
+    const Color(0xFFFF9500),
+    const Color(0xFFF8D32D),
+    const Color(0xFF78B060),
   ];
-  List<String> regionNames = [
-    '경기도',
-    '강원도',
-    '충청북도',
-    '충청남도',
-    '전라북도',
-    '전라남도',
-    '경상북도',
-    '경상남도',
-    '제주도',
-    '전체'
-  ];
+ 
   List<dynamic> marketOptions = [];
   //분석
   List<List<dynamic>> cropInfo = [];
@@ -175,202 +175,240 @@ class _CropInfoPageState extends State<CropInfoPage> {
       ['Actual Yield(2024)', formatCurrency(actAnalysis['this_value']), 'ton'],
       ['Actual Area(2024)', formatCurrency(actAnalysis['actual_area']), 'ha'],
       ['Yield per 10a(2024)', actAnalysis['production_per_10a'], 'kg'],
-      ['Avg. Year', formatCurrency(actAnalysis['value_compared_last_value']), 'ton'],
-      ['Last Year', formatCurrency(actAnalysis['value_compared_last_year']), 'ton'],
-      ['Cultivation Stability Index', actAnalysis['cultivation_stability_index'], ''],
+      [
+        'Avg. Year',
+        formatCurrency(actAnalysis['value_compared_average_year']),
+        'ton'
+      ],
+      [
+        'Last Year',
+        formatCurrency(actAnalysis['value_compared_last_value']),
+        'ton'
+      ],
+      [
+        'Cultivation Stability Index',
+        actAnalysis['cultivation_stability_index'],
+        ''
+      ],
     ];
     final predAnalysis = cropMockupData['selectedCrops'][selectedProduct]
         ['crops'][selectedCountry]['예측생산']['pred_analysis'];
     cropPredInfo = [
-      ['Forecast Yield(2024)', formatCurrency(predAnalysis['this_value']), 'ton'],
+      [
+        'Forecast Yield(2024)',
+        formatCurrency(predAnalysis['this_value']),
+        'ton'
+      ],
       ['Forecast Area(2024)', formatCurrency(predAnalysis['pred_area']), 'ha'],
       [
         'Yield Range',
         '${formatCurrency(predAnalysis['range'][0])} ~ ${formatCurrency(predAnalysis['range'][1])}',
         ''
       ],
-      ['Out-of-Range Probability', predAnalysis['out_of_range_probability'], '%'],
-      ['Stability Probability', predAnalysis['stability_section_probability'], '%'],
+      [
+        'Out-of-Range Probability',
+        predAnalysis['out_of_range_probability'],
+        '%'
+      ],
+      [
+        'Stability Probability',
+        predAnalysis['stability_section_probability'],
+        '%'
+      ],
       ['Signal Index', predAnalysis['signal_index'], ''],
     ];
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F8F8),
       key: _scaffoldKey,
       appBar: CustomAppBar(
-        color1: Color(0xFFBB9160),
-        color2: Color(0xFF020202),
         onMenuPressed: () {
           _scaffoldKey.currentState?.openDrawer();
         },
+        onLanguageChanged: (String value) {
+          setState(() {
+            selectedLanguage = value;
+          });
+        },
+        onProfilePressed: () {
+          // 프로필 버튼 동작
+        },
+        color1: const Color(0xFFBB9160),
+        color2: const Color(0xFF020202),
       ),
       extendBodyBehindAppBar: true,
       drawer: CustomDrawer(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              color: Color(0xFFF8F8F8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CustomHeader(
-                    gradientColors: const [
-                      Color(0xFFD0A16A),
-                      Color(0xFF604B32),
-                      Color(0xFF000000)
-                    ],
-                    selectedProduct: selectedProduct,
-                    title: 'CROP INFO',
-                    onProductChanged: (value) {
-                      setState(() {
-                        selectedProduct = value ?? '들깨';
-                        _updateChartData();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Container(
+                  color: const Color(0xFFF8F8F8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Region: ',
-                        style: AppTextStyle.light16,
-                      ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      DropdownWidget(
-                        options: marketOptions,
-                        selectedValue: selectedCountry,
-                        onChanged: (value) {
+                      CustomHeader(
+                        gradientColors: const [
+                          Color(0xFFD0A16A),
+                          Color(0xFF604B32),
+                          Color(0xFF000000)
+                        ],
+                        selectedProduct: selectedProduct,
+                        title: 'CROP INFO',
+                        onProductChanged: (value) {
                           setState(() {
-                            selectedCountry = value ?? '한국';
-                            // _updateChartData(); // 국가 변경 시 데이터 업데이트
+                            selectedProduct = value ?? '들깨';
+                            _updateChartData();
                           });
                         },
                       ),
+                      const SizedBox(height: 30),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Region: ',
+                            style: AppTextStyle.light16,
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          DropdownWidget(
+                            options: marketOptions,
+                            selectedValue: selectedCountry,
+                            onChanged: (value) {
+                              setState(() {
+                                selectedCountry = value ?? '한국';
+                                // _updateChartData(); // 국가 변경 시 데이터 업데이트
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const CustomTextWidget(text: 'Analysis'),
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
+                        color: Colors.white,
+                        width: double.infinity,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CropInfoTable(cropInfo: cropInfo),
+                            YearButtonWidget(
+                              availableYears: availableRegions,
+                              selectedYears: selectedRegions,
+                              onYearsChanged: (updatedSelectedYears) {
+                                setState(() {
+                                  selectedRegions = updatedSelectedYears;
+                                  _updateChartData();
+                                });
+                              },
+                              yearColorMap: RegionColorMap,
+                              isContinuousView: isContinuousView,
+                            ),
+                            const SizedBox(height: 16),
+                            CropChart(
+                              selectedRegions: selectedRegions,
+                              currentProductionData: currentProductionData,
+                              gradeColorMap: RegionColorMap,
+                              unit: 'Yield(ton)',
+                            ),
+                            const SizedBox(height: 10),
+                            DropdownWidget(
+                              options: availableYears,
+                              selectedValue: selectedYear,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedYear = value ?? selectedYear;
+                                  _updateChartData(); // 국가 변경 시 데이터 업데이트
+                                });
+                              },
+                            ),
+                            RegionalBarWidget(
+                              regionalProduction: regionalProduction,
+                              color: const Color(0xFF87C46D),
+                            ),
+                            RegionalProdWidget(
+                                regionalProduction: regionalProduction),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      const CustomTextWidget(text: 'Forecast'),
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
+                        color: Colors.white,
+                        width: double.infinity,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CropInfoTable(cropInfo: cropPredInfo),
+                            GradeButtonWidget(
+                              onGradeChanged: (newSelectedForecast) {
+                                setState(() {
+                                  selectedPredRegion = newSelectedForecast;
+                                  _updateChartData();
+                                });
+                              },
+                              btnNames: availablePredRegions,
+                              selectedBtn: selectedPredRegion,
+                            ),
+                            CropPredChart(
+                              latestPred: predProductionData,
+                              latestActual: currPredProductionData,
+                              date: date,
+                              actualName: 'Actual',
+                              predictedName: 'Predicted',
+                              unit: '',
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownWidget(
+                              options: availablePredYears,
+                              selectedValue: selectedPredYear,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedPredYear = value ?? selectedPredYear;
+                                  _updateChartData(); // 국가 변경 시 데이터 업데이트
+                                });
+                              },
+                            ),
+                            RegionalBarWidget(
+                              regionalProduction: regionalPredProduction,
+                              color: const Color(0xFF3EB080),
+                            ),
+                            RegionalProdWidget(
+                                regionalProduction: regionalPredProduction),
+                          ],
+                        ),
+                      ),
+                      const CustomTextWidget(text: 'Country Statistics'),
+                      Container(
+                        padding: const EdgeInsets.all(16.0),
+                        color: Colors.white,
+                        width: double.infinity,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Export Amount',
+                                style: AppTextStyle.medium16),
+                            LineChart(statisticData: statistic),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 50,
+                      ),
                     ],
                   ),
-                  const CustomTextWidget(text: 'Analysis'),
-                  Container(
-                    padding: const EdgeInsets.all(16.0),
-                    color: Colors.white,
-                    width: double.infinity,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CropInfoTable(cropInfo: cropInfo),
-                        YearButtonWidget(
-                          availableYears: availableRegions,
-                          selectedYears: selectedRegions,
-                          onYearsChanged: (updatedSelectedYears) {
-                            setState(() {
-                              selectedRegions = updatedSelectedYears;
-                              _updateChartData();
-                            });
-                          },
-                          yearColorMap: RegionColorMap,
-                          isContinuousView: isContinuousView,
-                        ),
-                        const SizedBox(height: 16),
-                        CropChart(
-                          selectedRegions: selectedRegions,
-                          currentProductionData: currentProductionData,
-                          gradeColorMap: RegionColorMap,
-                          unit: 'Yield(ton)',
-                        ),
-                        const SizedBox(height: 10),
-                        DropdownWidget(
-                          options: availableYears,
-                          selectedValue: selectedYear,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedYear = value ?? selectedYear;
-                              _updateChartData(); // 국가 변경 시 데이터 업데이트
-                            });
-                          },
-                        ),
-                        RegionalBarWidget(
-                          regionalProduction: regionalProduction,
-                          color: Color(0xFF87C46D),
-                        ),
-                        RegionalProdWidget(
-                            regionalProduction: regionalProduction),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
-                  const CustomTextWidget(text: 'Forecast'),
-                  Container(
-                    padding: const EdgeInsets.all(16.0),
-                    color: Colors.white,
-                    width: double.infinity,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CropInfoTable(cropInfo: cropPredInfo),
-                        GradeButtonWidget(
-                          onGradeChanged: (newSelectedForecast) {
-                            setState(() {
-                              selectedPredRegion = newSelectedForecast;
-                              _updateChartData();
-                            });
-                          },
-                          btnNames: availablePredRegions,
-                          selectedBtn: selectedPredRegion,
-                        ),
-                        CropPredChart(
-                          latestPred: predProductionData,
-                          latestActual: currPredProductionData,
-                          date: date,
-                          actualName: 'Actual',
-                          predictedName: 'Predicted',
-                          unit: '',
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownWidget(
-                          options: availablePredYears,
-                          selectedValue: selectedPredYear,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedPredYear = value ?? selectedPredYear;
-                              _updateChartData(); // 국가 변경 시 데이터 업데이트
-                            });
-                          },
-                        ),
-                        RegionalBarWidget(
-                          regionalProduction: regionalPredProduction,
-                          color: Color(0xFF3EB080),
-                        ),
-                        RegionalProdWidget(
-                            regionalProduction: regionalPredProduction),
-                      ],
-                    ),
-                  ),
-                  const CustomTextWidget(text: 'Country Statistics'),
-                  Container(
-                    padding: const EdgeInsets.all(16.0),
-                    color: Colors.white,
-                    width: double.infinity,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Export Amount', style: AppTextStyle.medium16),
-                        LineChart(statisticData: statistic),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 50,
-                  ),
-                ],
+                ),
               ),
-            ),
-            Footer(),
-          ],
+              const Footer(),
+            ],
+          ),
         ),
       ),
     );
@@ -390,7 +428,7 @@ class _CropInfoPageState extends State<CropInfoPage> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
             blurRadius: 4,
             spreadRadius: 1,
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:v4/screens/common/appbar.dart';
+import 'package:v4/data/mock/price_mockup_data.dart';
+// import 'package:v4/screens/common/appbar.dart';
 import 'package:v4/screens/common/drawer.dart';
 import 'package:v4/screens/common/footer.dart';
 import 'package:v4/screens/common/header.dart';
@@ -14,14 +15,18 @@ import 'package:v4/screens/price_info/widget/seasonal_bar.dart';
 import 'package:v4/screens/utils/format/number_format.dart';
 import 'package:v4/screens/utils/format/plus_minus.dart';
 import 'package:v4/services/price_service.dart';
+import 'package:v4/widgets/custom_app_bar.dart';
 
 class PriceInfoPage extends StatefulWidget {
+  const PriceInfoPage({super.key});
+
   @override
   _PriceInfoPageState createState() => _PriceInfoPageState();
 }
 
 class _PriceInfoPageState extends State<PriceInfoPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String selectedLanguage = '한국어';
 
   //공통
   Future<void>? _priceInfoFuture;
@@ -32,12 +37,12 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
   String priceCategory = "수출가격";
   bool isContinuousView = false; //그래프 이어서 보기
   final List<Color> buttonColors = [
-    Color(0xFFEB5C5C),
-    Color(0xFFFF9500),
-    Color(0xFFF8D32D),
-    Color(0xFF9568EE),
-    Color(0xFFEE68C4),
-    Color(0xFF0084FF),
+    const Color(0xFFEB5C5C),
+    const Color(0xFFFF9500),
+    const Color(0xFFF8D32D),
+    const Color(0xFF9568EE),
+    const Color(0xFFEE68C4),
+    const Color(0xFF0084FF),
   ];
 
   // 분석
@@ -73,7 +78,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
     final data = await _priceService.fetchPriceInfo();
     if (mounted) {
       setState(() {
-        priceMockupData = data;
+        priceMockupData = priceMockData;
       });
       _updateYearColorMap();
       _updateGradeColorMap();
@@ -97,24 +102,50 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
     cropPredData = priceMockupData['selectedCrops'][selectedProduct]['prices']
         [selectedPriceType][priceCategory]['예측가격'];
 
-    // 선택된 연도들의 데이터 가져오기
+    // 연도를 내림차순으로 정렬 (평년 제외)
+    modifiedSelectedYears.sort((a, b) {
+      if (a == '평년') return 1;
+      if (b == '평년') return -1;
+      return int.parse(b).compareTo(int.parse(a));
+    });
+
+    // 일반 연도 데이터 처리
     currentProductionData = {
       for (var grade in selectedGrades)
         grade: [
-          for (var year in modifiedSelectedYears.reversed)
+          for (var year in modifiedSelectedYears
+              .where((y) => y != '평년')
+              .toList()
+              .reversed)
             ...List<double>.from((cropData[year][grade] ?? [])
                 .where((data) => data != null)
                 .map((data) => data!.toDouble()))
         ]
     };
 
+    // 평년 데이터 처리
+    if (modifiedSelectedYears.contains('평년')) {
+      currentProductionData['평년'] = [
+        for (var year
+            in modifiedSelectedYears.where((y) => y != '평년').toList().reversed)
+          if (cropData['평년'].containsKey(year))
+            ...List<double>.from((cropData['평년'][year] ?? [])
+                .where((data) => data != null)
+                .map((data) => data!.toDouble()))
+          else
+            ...List<double>.filled(12, 0.0) // 빈 값으로 채우기
+      ];
+    }
+
+    print("Current Production Data: $currentProductionData");
+
+    // 예측 데이터 처리
     predProductionData = [
       for (var year in modifiedSelectedPredYears.reversed)
         ...List<double>.from((cropPredData[year][selectedPredGrades] ?? [])
             .where((data) => data != null)
             .map((data) => data!.toDouble()))
     ];
-    
 
     predCurrProductionData = [
       for (var year in modifiedSelectedPredYears.reversed)
@@ -123,15 +154,16 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
             .map((data) => data!.toDouble()))
     ];
 
-    print(predCurrProductionData);
-
+    // 날짜 처리
     int yearIndex = 0;
     int month = 1;
     date.clear();
 
     for (int i = 0; i < predProductionData.length; i++) {
-      date.add(
-          '${modifiedSelectedPredYears[yearIndex].substring(2)}.${month.toString().padLeft(2, '0')}');
+      String yearStr = modifiedSelectedPredYears[yearIndex];
+      String displayYear = yearStr == '평년' ? 'Avg' : yearStr.substring(2);
+      date.add('$displayYear.${month.toString().padLeft(2, '0')}');
+
       month++;
       if (month > 12) {
         month = 1;
@@ -142,20 +174,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
       }
     }
 
-    date.sort((a, b) {
-      int yearA = int.parse(a.split('.')[0]);
-      int monthA = int.parse(a.split('.')[1]);
-      int yearB = int.parse(b.split('.')[0]);
-      int monthB = int.parse(b.split('.')[1]);
-
-      if (yearA == yearB) {
-        return monthA.compareTo(monthB);
-      } else {
-        return yearA.compareTo(yearB);
-      }
-    });
-
-    // 계절지수 설정하기
+    // 계절지수 설정
     seasonalIndex = [
       for (var year in modifiedSelectedYears.reversed)
         ...List<double>.from((cropData['monthly_seasonal_index'][year] ?? [])
@@ -192,14 +211,14 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
     for (int i = 0; i < availableYears.length; i++) {
       String year = availableYears[i];
       if (year == 'Avg.') {
-        yearColorMap[year] = Color(0xFF78B060);
+        yearColorMap[year] = const Color(0xFF78B060);
       } else {
-        yearColorMap[year] = Color(0xFF0084FF);
+        yearColorMap[year] = const Color(0xFF0084FF);
       }
     }
 
-    availablePredYears = priceMockupData['selectedCrops'][selectedProduct]['prices']
-            [selectedPriceType][priceCategory]['예측가격']
+    availablePredYears = priceMockupData['selectedCrops'][selectedProduct]
+            ['prices'][selectedPriceType][priceCategory]['예측가격']
         .keys
         .where((year) =>
             year != 'pred_analysis' && year != 'monthly_seasonal_index')
@@ -210,9 +229,9 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
     for (int i = 0; i < availablePredYears.length; i++) {
       String year = availablePredYears[i];
       if (year == '평년') {
-        yearPredColorMap[year] = Color(0xFF78B060);
+        yearPredColorMap[year] = const Color(0xFF78B060);
       } else {
-        yearPredColorMap[year] = Color(0xFF0084FF);
+        yearPredColorMap[year] = const Color(0xFF0084FF);
       }
     }
   }
@@ -220,37 +239,39 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
   // 등급 버튼 컬러 매핑
   void _updateGradeColorMap() {
     gradeColorMap.clear(); // 기존 맵 초기화
-    availableGrades = priceMockupData['selectedCrops'][selectedProduct]['prices']
-            [selectedPriceType][priceCategory]['실제가격'][availableYears[0]]
+    availableGrades = priceMockupData['selectedCrops'][selectedProduct]
+                ['prices'][selectedPriceType][priceCategory]['실제가격']
+            [availableYears[0]]
         .keys
         .toList();
     selectedGrades = ['해당없음'];
     for (String grade in availableGrades) {
       switch (grade) {
-        case '특':
-          gradeColorMap[grade] = Color(0xFFEB5C5C); // 특
+        case '':
+          gradeColorMap[grade] = const Color(0xFFEB5C5C); // 특
           break;
         case '상':
-          gradeColorMap[grade] = Color(0xFFFF9500); // 상
+          gradeColorMap[grade] = const Color(0xFFFF9500); // 상
           break;
         case '중':
-          gradeColorMap[grade] = Color(0xFFF8D32D); // 중
+          gradeColorMap[grade] = const Color(0xFFF8D32D); // 중
           break;
         case '하':
-          gradeColorMap[grade] = Color(0xFF9568EE); // 하
+          gradeColorMap[grade] = const Color(0xFF9568EE); // 하
           break;
         case '등급외':
-          gradeColorMap[grade] = Color(0xFFEE68C4); // 등급외
+          gradeColorMap[grade] = const Color(0xFFEE68C4); // 등급외
           break;
         case '해당없음':
-          gradeColorMap[grade] = Color(0xFF0084FF); // 해당없음
+          gradeColorMap[grade] = const Color(0xFF0084FF); // 해당없음
           break;
         default:
           gradeColorMap[grade] = Colors.grey; // 지정되지 않은 경우 기본 색상
       }
     }
-    availablePredGrades = priceMockupData['selectedCrops'][selectedProduct]['prices']
-            [selectedPriceType][priceCategory]['예측가격'][availableYears[0]]
+    availablePredGrades = priceMockupData['selectedCrops'][selectedProduct]
+                ['prices'][selectedPriceType][priceCategory]['예측가격']
+            [availableYears[0]]
         .keys
         .toList();
   }
@@ -258,339 +279,413 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8F8F8),
       key: _scaffoldKey,
       appBar: CustomAppBar(
-        color1: Color(0xFF054F90),
-        color2: Color(0xFF020202),
         onMenuPressed: () {
           _scaffoldKey.currentState?.openDrawer();
         },
+        onLanguageChanged: (String value) {
+          setState(() {
+            selectedLanguage = value;
+          });
+        },
+        onProfilePressed: () {
+          // 프로필 버튼 동작
+        },
+        color1: const Color(0xFF054F90),
+        color2: const Color(0xFF020202),
       ),
       extendBodyBehindAppBar: true,
       drawer: CustomDrawer(),
-      body: FutureBuilder(
-        future: _priceInfoFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('데이터를 불러오는 중 오류가 발생했습니다.'));
-          } else {
-            return SingleChildScrollView(
-              child: Column(
-                children: [
-                  Container(
-                    color: Color(0xFFF8F8F8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CustomHeader(
-                          gradientColors: const [
-                            Color(0xFF04579D),
-                            Color(0xFF022F54),
-                            Color(0xFF020202)
-                          ],
-                          selectedProduct: selectedProduct,
-                          title: 'PRICE INFO',
-                          onProductChanged: (value) {
-                            setState(() {
-                              // 데이터 초기화
-                              selectedProduct = value ?? '들깨';
-                              selectedPriceType = "해외";
-                              priceCategory = "수출가격";
-                              _updateYearColorMap();
-                              _updateChartData();
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 30),
-                        _buildPriceTypeDropdown(),
-                        const SizedBox(height: 16),
-                        _buildToggleButtons(),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 20),
-                          child: Text(
-                            'Analysis',
-                            style: AppTextStyle.medium18,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(16.0),
-                          color: Colors.white,
-                          width: double.infinity,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              PriceTableWidget(
-                                dataRows: cropData['act_analysis'] != null
-                                    ? [
-                                        [
-                                          'Current(${cropData['act_analysis']['date']})',
-                                          '${cropData['act_analysis']['currency_unit']}${formatCurrency(cropData['act_analysis']['this_value'])}',
-                                          ' (${cropData['act_analysis']['weight_unit']})',
-                                          'Previous',
-                                          formatPositiveValue(
-                                              cropData['act_analysis']
-                                                  ['rate_compared_last_value'])
-                                        ],
-                                        [
-                                          'Vs. Last Year',
-                                          formatCurrency(
-                                              cropData['act_analysis']
-                                                  ['value_compared_last_year']),
-                                          '${formatArrowIndicator(cropData['act_analysis']['diff_compared_last_value_year'])}(${formatPositiveValue(cropData['act_analysis']['rate_compared_last_year'])})'
-                                        ],
-                                        [
-                                          'Vs. Avg. Year',
-                                          formatCurrency(cropData[
-                                                  'act_analysis']
-                                              ['value_compared_common_3years']),
-                                          '${formatArrowIndicator(cropData['act_analysis']['diff_value_compared_common_3years'])}(${formatPositiveValue(cropData['act_analysis']['rate_compared_common_3years'])})'
-                                        ],
-                                        [
-                                          '1-Year Avg.',
-                                          formatCurrency(
-                                              cropData['act_analysis']
-                                                  ['year_average_value'])
-                                        ],
-                                        [
-                                          '1-Year Volatility',
-                                          '${cropData['act_analysis']['year_change_value']}'
-                                        ],
-                                        [
-                                          'Seasonal Index',
-                                          '${cropData['act_analysis']['seasonal_index']}'
-                                        ],
-                                        [
-                                          'Supply Stability Index',
-                                          '${cropData['act_analysis']['supply_stability_index']}'
-                                        ],
-                                      ]
-                                    : [
-                                        ['Current()', '', '', 'Previous', ''],
-                                        ['Vs. Last Year', '', ''],
-                                        ['Vs. Avg. Year', '', ''],
-                                        ['1-Year Avg.', ''],
-                                        ['1-Year Volatility', ''],
-                                        ['Seasonal Index', ''],
-                                        ['Supply Stability Index', ''],
+      body: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              FutureBuilder(
+                future: _priceInfoFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return const Center(child: Text('데이터를 불러오는 중 오류가 발생했습니다.'));
+                  } else {
+                    return SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Container(
+                            color: const Color(0xFFF8F8F8),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints:
+                                    const BoxConstraints(maxWidth: 1200),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CustomHeader(
+                                      gradientColors: const [
+                                        Color(0xFF04579D),
+                                        Color(0xFF022F54),
+                                        Color(0xFF020202)
                                       ],
-                              ),
-                              YearButtonWidget(
-                                availableYears: availableYears,
-                                selectedYears: selectedYears,
-                                onYearsChanged: (updatedSelectedYears) {
-                                  setState(() {
-                                    selectedYears = updatedSelectedYears;
-                                    _updateChartData();
-                                  });
-                                },
-                                yearColorMap: yearColorMap,
-                                isContinuousView: false,
-                              ),
-                              YearButtonWidget(
-                                availableYears: availableGrades,
-                                selectedYears: selectedGrades,
-                                onYearsChanged: (updatedSelectedYears) {
-                                  setState(() {
-                                    selectedGrades = updatedSelectedYears;
-                                    _updateChartData();
-                                  });
-                                },
-                                yearColorMap: gradeColorMap,
-                                isContinuousView: false,
-                              ),
-                              const SizedBox(height: 16),
-                              CurrentChart(
-                                selectedGrades: selectedGrades,
-                                selectedYears: selectedYears,
-                                currentProductionData: currentProductionData,
-                                onToggleView: (bool newValue) {
-                                  setState(() {
-                                    isContinuousView = newValue;
-                                  });
-                                },
-                                gradeColorMap: gradeColorMap,
-                                unit: cropData['act_analysis'] != null
-                                    ? '(${cropData['act_analysis']['currency_unit']})'
-                                    : '',
-                                hoverText: 'point.x: point.y',
-                              ),
-                              SeasonalBarWidget(
-                                seasonalIndex: seasonalIndex,
-                                selectedYears: selectedYears,
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 20),
-                          child: Text(
-                            'Forecast',
-                            style: AppTextStyle.medium18,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(16.0),
-                          color: Colors.white,
-                          width: double.infinity,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              PriceTableWidget(
-                                dataRows: cropPredData['pred_analysis'] != null
-                                    ? [
-                                        [
-                                          'Predicted(${cropPredData['pred_analysis']['date']})',
-                                          '${cropPredData['pred_analysis']['currency_unit']}${formatCurrency(cropPredData['pred_analysis']['predicted_price'])}',
-                                          ' (${cropPredData['pred_analysis']['weight_unit']})',
-                                          'Current',
-                                          formatPositiveValue(
-                                              cropPredData['pred_analysis']
-                                                  ['rate_compared_last_value'])
+                                      selectedProduct: selectedProduct,
+                                      title: 'PRICE INFO',
+                                      onProductChanged: (value) {
+                                        setState(() {
+                                          // 데이터 초기화
+                                          selectedProduct = value ?? '들깨';
+                                          selectedPriceType = "해외";
+                                          priceCategory = "수출가격";
+                                          _updateYearColorMap();
+                                          _updateChartData();
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(height: 30),
+                                    _buildPriceTypeDropdown(),
+                                    const SizedBox(height: 16),
+                                    _buildToggleButtons(),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 16.0, vertical: 20),
+                                      child: Text(
+                                        'Analysis',
+                                        style: AppTextStyle.medium18,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.all(16.0),
+                                      color: Colors.white,
+                                      width: double.infinity,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          PriceTableWidget(
+                                            dataRows: cropData[
+                                                        'act_analysis'] !=
+                                                    null
+                                                ? [
+                                                    [
+                                                      'Current(${cropData['act_analysis']['date']})',
+                                                      '${cropData['act_analysis']['currency_unit']}${formatCurrency(cropData['act_analysis']['this_value'])}',
+                                                      ' (${cropData['act_analysis']['weight_unit']})',
+                                                      'Previous',
+                                                      formatPositiveValue(cropData[
+                                                              'act_analysis'][
+                                                          'rate_compared_last_value'])
+                                                    ],
+                                                    [
+                                                      'Vs. Last Year',
+                                                      formatCurrency(cropData[
+                                                              'act_analysis'][
+                                                          'value_compared_last_year']),
+                                                      '${formatArrowIndicator(cropData['act_analysis']['diff_compared_last_value_year'])}(${formatPositiveValue(cropData['act_analysis']['rate_compared_last_year'])})'
+                                                    ],
+                                                    [
+                                                      'Vs. Avg. Year',
+                                                      formatCurrency(cropData[
+                                                              'act_analysis'][
+                                                          'value_compared_common_3years']),
+                                                      '${formatArrowIndicator(cropData['act_analysis']['diff_value_compared_common_3years'])}(${formatPositiveValue(cropData['act_analysis']['rate_compared_common_3years'])})'
+                                                    ],
+                                                    [
+                                                      '1-Year Avg.',
+                                                      formatCurrency(cropData[
+                                                              'act_analysis'][
+                                                          'year_average_value'])
+                                                    ],
+                                                    [
+                                                      '1-Year Volatility',
+                                                      '${cropData['act_analysis']['year_change_value']}'
+                                                    ],
+                                                    [
+                                                      'Seasonal Index',
+                                                      '${cropData['act_analysis']['seasonal_index']}'
+                                                    ],
+                                                    [
+                                                      'Supply Stability Index',
+                                                      '${cropData['act_analysis']['supply_stability_index']}'
+                                                    ],
+                                                  ]
+                                                : [
+                                                    [
+                                                      'Current()',
+                                                      '',
+                                                      '',
+                                                      'Previous',
+                                                      ''
+                                                    ],
+                                                    ['Vs. Last Year', '', ''],
+                                                    ['Vs. Avg. Year', '', ''],
+                                                    ['1-Year Avg.', ''],
+                                                    ['1-Year Volatility', ''],
+                                                    ['Seasonal Index', ''],
+                                                    [
+                                                      'Supply Stability Index',
+                                                      ''
+                                                    ],
+                                                  ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          YearButtonWidget(
+                                            availableYears: availableYears,
+                                            selectedYears: selectedYears,
+                                            onYearsChanged:
+                                                (updatedSelectedYears) {
+                                              setState(() {
+                                                selectedYears =
+                                                    updatedSelectedYears;
+                                                _updateChartData();
+                                              });
+                                            },
+                                            yearColorMap: yearColorMap,
+                                            isContinuousView: false,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          YearButtonWidget(
+                                            availableYears: availableGrades,
+                                            selectedYears: selectedGrades,
+                                            onYearsChanged:
+                                                (updatedSelectedYears) {
+                                              setState(() {
+                                                selectedGrades =
+                                                    updatedSelectedYears;
+                                                _updateChartData();
+                                              });
+                                            },
+                                            yearColorMap: gradeColorMap,
+                                            isContinuousView: false,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          CurrentChart(
+                                            selectedGrades: selectedGrades,
+                                            selectedYears: selectedYears,
+                                            currentProductionData:
+                                                currentProductionData,
+                                            onToggleView: (bool newValue) {
+                                              setState(() {
+                                                isContinuousView = newValue;
+                                              });
+                                            },
+                                            gradeColorMap: gradeColorMap,
+                                            unit: cropData['act_analysis'] !=
+                                                    null
+                                                ? '(${cropData['act_analysis']['currency_unit']})'
+                                                : '',
+                                            hoverText: 'point.x: point.y',
+                                          ),
+                                          SeasonalBarWidget(
+                                            seasonalIndex: seasonalIndex,
+                                            selectedYears: selectedYears,
+                                          ),
+                                          const SizedBox(
+                                            height: 20,
+                                          ),
                                         ],
-                                        [
-                                          'Range',
-                                          '${formatCurrency(cropPredData['pred_analysis']['range'][0])} ~ ${formatCurrency(cropPredData['pred_analysis']['range'][1])}'
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 20,
+                                    ),
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 16.0, vertical: 20),
+                                      child: Text(
+                                        'Forecast',
+                                        style: AppTextStyle.medium18,
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.all(16.0),
+                                      color: Colors.white,
+                                      width: double.infinity,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          PriceTableWidget(
+                                            dataRows:
+                                                cropPredData['pred_analysis'] !=
+                                                        null
+                                                    ? [
+                                                        [
+                                                          'Predicted(${cropPredData['pred_analysis']['date']})',
+                                                          '${cropPredData['pred_analysis']['currency_unit']}${formatCurrency(cropPredData['pred_analysis']['predicted_price'])}',
+                                                          ' (${cropPredData['pred_analysis']['weight_unit']})',
+                                                          'Current',
+                                                          formatPositiveValue(
+                                                              cropPredData[
+                                                                      'pred_analysis']
+                                                                  [
+                                                                  'rate_compared_last_value'])
+                                                        ],
+                                                        [
+                                                          'Range',
+                                                          '${formatCurrency(cropPredData['pred_analysis']['range'][0])} ~ ${formatCurrency(cropPredData['pred_analysis']['range'][1])}'
+                                                        ],
+                                                        [
+                                                          'Out-of-Range Probability',
+                                                          '${cropPredData['pred_analysis']['out_of_range_probability']}%'
+                                                        ],
+                                                        [
+                                                          'Stability Probability',
+                                                          '${cropPredData['pred_analysis']['stability_section_probability']}%'
+                                                        ],
+                                                        [
+                                                          'Consistency Index',
+                                                          '${cropPredData['pred_analysis']['consistency_index']}'
+                                                        ],
+                                                        [
+                                                          'Seasonal Adjusted Price',
+                                                          formatCurrency(cropPredData[
+                                                                  'pred_analysis']
+                                                              [
+                                                              'seasonally_adjusted_price'])
+                                                        ],
+                                                        [
+                                                          'Signal Index',
+                                                          '${cropPredData['pred_analysis']['signal_index']}'
+                                                        ],
+                                                      ]
+                                                    : [
+                                                        [
+                                                          'Predicted()',
+                                                          '',
+                                                          '',
+                                                          'Current',
+                                                          ''
+                                                        ],
+                                                        ['Range', ''],
+                                                        [
+                                                          'Out-of-Range Probability',
+                                                          ''
+                                                        ],
+                                                        [
+                                                          'Stability Probability',
+                                                          ''
+                                                        ],
+                                                        [
+                                                          'Consistency Index',
+                                                          ''
+                                                        ],
+                                                        [
+                                                          'Seasonal Adjusted Price',
+                                                          ''
+                                                        ],
+                                                        ['Signal Index', ''],
+                                                      ],
+                                          ),
+                                          const SizedBox(height: 16),
+                                          YearButtonWidget(
+                                            availableYears: availablePredYears,
+                                            selectedYears: selectedPredYears,
+                                            onYearsChanged:
+                                                (updatedSelectedYears) {
+                                              setState(() {
+                                                selectedPredYears =
+                                                    updatedSelectedYears;
+                                                _updateChartData();
+                                              });
+                                            },
+                                            yearColorMap: yearPredColorMap,
+                                            isContinuousView: false,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          GradeButtonWidget(
+                                            onGradeChanged:
+                                                (newSelectedForecast) {
+                                              setState(() {
+                                                selectedPredGrades =
+                                                    newSelectedForecast;
+                                                _updateChartData();
+                                              });
+                                            },
+                                            btnNames: availablePredGrades,
+                                            selectedBtn: selectedPredGrades,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          TrendChart(
+                                            latestPred: predProductionData,
+                                            latestActual:
+                                                predCurrProductionData,
+                                            date: date,
+                                            actualName: 'Current',
+                                            predictedName: 'Predicted',
+                                            unit: '',
+                                          ),
+                                          SeasonalBarWidget(
+                                            seasonalIndex: seasonalPredIndex,
+                                            selectedYears: selectedPredYears,
+                                          ),
+                                          const SizedBox(
+                                            height: 20,
+                                          ),
                                         ],
-                                        [
-                                          'Out-of-Range Probability',
-                                          '${cropPredData['pred_analysis']['out_of_range_probability']}%'
-                                        ],
-                                        [
-                                          'Stability Probability',
-                                          '${cropPredData['pred_analysis']['stability_section_probability']}%'
-                                        ],
-                                        [
-                                          'Consistency Index',
-                                          '${cropPredData['pred_analysis']['consistency_index']}'
-                                        ],
-                                        [
-                                          'Seasonal Adjusted Price',
-                                          formatCurrency(
-                                              cropPredData['pred_analysis']
-                                                  ['seasonally_adjusted_price'])
-                                        ],
-                                        [
-                                          'Signal Index',
-                                          '${cropPredData['pred_analysis']['signal_index']}'
-                                        ],
-                                      ]
-                                    : [
-                                        ['Predicted()', '', '', 'Current', ''],
-                                        ['Range', ''],
-                                        ['Out-of-Range Probability', ''],
-                                        ['Stability Probability', ''],
-                                        ['Consistency Index', ''],
-                                        ['Seasonal Adjusted Price', ''],
-                                        ['Signal Index', ''],
-                                      ],
-                              ),
-                              YearButtonWidget(
-                                availableYears: availablePredYears,
-                                selectedYears: selectedPredYears,
-                                onYearsChanged: (updatedSelectedYears) {
-                                  setState(() {
-                                    selectedPredYears = updatedSelectedYears;
-                                    _updateChartData();
-                                  });
-                                },
-                                yearColorMap: yearPredColorMap,
-                                isContinuousView: false,
-                              ),
-                              GradeButtonWidget(
-                                onGradeChanged: (newSelectedForecast) {
-                                  setState(() {
-                                    selectedPredGrades = newSelectedForecast;
-                                    _updateChartData();
-                                  });
-                                },
-                                btnNames: availablePredGrades,
-                                selectedBtn: selectedPredGrades,
-                              ),
-                              TrendChart(
-                                latestPred: predProductionData,
-                                latestActual: predCurrProductionData,
-                                date: date,
-                                actualName: 'Current',
-                                predictedName: 'Predicted',
-                                unit: '',
-                              ),
-                              SeasonalBarWidget(
-                                seasonalIndex: seasonalPredIndex,
-                                selectedYears: selectedPredYears,
-                              ),
-                              const SizedBox(
-                                height: 20,
-                              ),
-                            ],
-                          ),
-                        ),
+                                      ),
+                                    ),
 
-                        // const Padding(
-                        //   padding:
-                        //       EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
-                        //   child: Text(
-                        //     '예측 성능 지표',
-                        //     style: AppTextStyle.medium18,
-                        //   ),
-                        // ),
-                        // Container(
-                        //   padding: const EdgeInsets.symmetric(
-                        //       horizontal: 16.0, vertical: 20),
-                        //   color: Colors.white,
-                        //   width: double.infinity,
-                        //   child: Column(
-                        //     crossAxisAlignment: CrossAxisAlignment.start,
-                        //     children: [
-                        //       const SizedBox(
-                        //         height: 20,
-                        //       ),
-                        //       Row(
-                        //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        //         children: [
-                        //           // 첫 번째 차트
-                        //           Flexible(
-                        //             child: HalfDoughnutChart(
-                        //               value: performance['highest_accuracy'] ?? 0.0,
-                        //               title: '최고 예측 정확도',
-                        //             ),
-                        //           ),
-                        //           // 두 번째 차트
-                        //           Flexible(
-                        //             child: HalfDoughnutChart(
-                        //               value:
-                        //                   performance['last_value_accuracy'] ?? 0.0,
-                        //               title: '지난달 예측 정확도',
-                        //             ),
-                        //           ),
-                        //         ],
-                        //       ),
-                        //       PerformanceWidget(info: performance, type: '가격'),
-                        //     ],
-                        //   ),
-                        // ),
-                        const SizedBox(
-                          height: 50,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Footer(),
-                ],
+                                    // const Padding(
+                                    //   padding:
+                                    //       EdgeInsets.symmetric(horizontal: 16.0, vertical: 20),
+                                    //   child: Text(
+                                    //     '예측 성능 지표',
+                                    //     style: AppTextStyle.medium18,
+                                    //   ),
+                                    // ),
+                                    // Container(
+                                    //   padding: const EdgeInsets.symmetric(
+                                    //       horizontal: 16.0, vertical: 20),
+                                    //   color: Colors.white,
+                                    //   width: double.infinity,
+                                    //   child: Column(
+                                    //     crossAxisAlignment: CrossAxisAlignment.start,
+                                    //     children: [
+                                    //       const SizedBox(
+                                    //         height: 20,
+                                    //       ),
+                                    //       Row(
+                                    //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    //         children: [
+                                    //           // 첫 번째 차트
+                                    //           Flexible(
+                                    //             child: HalfDoughnutChart(
+                                    //               value: performance['highest_accuracy'] ?? 0.0,
+                                    //               title: '최고 예측 정확도',
+                                    //             ),
+                                    //           ),
+                                    //           // 두 번째 차트
+                                    //           Flexible(
+                                    //             child: HalfDoughnutChart(
+                                    //               value:
+                                    //                   performance['last_value_accuracy'] ?? 0.0,
+                                    //               title: '지난달 예측 정확도',
+                                    //             ),
+                                    //           ),
+                                    //         ],
+                                    //       ),
+                                    //       PerformanceWidget(info: performance, type: '가격'),
+                                    //     ],
+                                    //   ),
+                                    // ),
+                                    const SizedBox(
+                                      height: 50,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const Footer(),
+                        ],
+                      ),
+                    );
+                  }
+                },
               ),
-            );
-          }
-        },
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -611,7 +706,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
-                  offset: Offset(0, 2),
+                  offset: const Offset(0, 2),
                   blurRadius: 4,
                   spreadRadius: 1,
                 ),
@@ -650,7 +745,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
                 icon: Image.asset('assets/icon/arrow_down.png',
                     width: 20, height: 20),
                 style: const TextStyle(color: Color(0xFF363B45)),
-                underline: SizedBox(),
+                underline: const SizedBox(),
                 isExpanded: true,
               ),
             ),
@@ -669,15 +764,15 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
   Widget _buildToggleButtons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Container(
+      child: SizedBox(
         height: 42,
         child: ToggleButtons(
           isSelected: selectedPriceType == "해외"
               ? [priceCategory == "수출가격", priceCategory == "수입가격"]
               : [priceCategory == "유통가격", priceCategory == "산지가격"],
           borderRadius: BorderRadius.circular(50),
-          selectedBorderColor: Color(0xFF39739D),
-          borderColor: Color(0xFFD9D9D9),
+          selectedBorderColor: const Color(0xFF39739D),
+          borderColor: const Color(0xFFD9D9D9),
           onPressed: (index) {
             String newPriceCategory;
 
@@ -687,7 +782,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
               newPriceCategory = index == 0 ? "유통가격" : "산지가격";
             }
 
-            // 가격 데이터가 있는지 확인
+            // 가격 데이터가 있는지 확
             bool hasData = checkIfDataExists(newPriceCategory);
 
             if (hasData) {
@@ -702,10 +797,10 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
               _showNoDataAlert(context);
             }
           },
-          fillColor: Color(0xFF39739D),
+          fillColor: const Color(0xFF39739D),
           selectedColor: Colors.white,
-          color: Color(0xFF9CA1AB),
-          constraints: BoxConstraints.expand(width: 130),
+          color: const Color(0xFF9CA1AB),
+          constraints: const BoxConstraints.expand(width: 130),
           children: selectedPriceType == "해외"
               ? [
                   const Text(
@@ -735,12 +830,12 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
   // 데이터가 있는지 확인하는 함수
   bool checkIfDataExists(String category) {
     if (selectedPriceType == "해외") {
-      var data =
-          priceMockupData["selectedCrops"][selectedProduct]["prices"]["해외"][category];
+      var data = priceMockupData["selectedCrops"][selectedProduct]["prices"]
+          ["해외"][category];
       return data != null && data.isNotEmpty; // null 체크 후 isNotEmpty 호출
     } else {
-      var data =
-          priceMockupData["selectedCrops"][selectedProduct]["prices"]["국내"][category];
+      var data = priceMockupData["selectedCrops"][selectedProduct]["prices"]
+          ["국내"][category];
       return data != null && data.isNotEmpty; // null 체크 후 isNotEmpty 호출
     }
   }

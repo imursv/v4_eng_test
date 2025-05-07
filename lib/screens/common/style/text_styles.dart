@@ -78,4 +78,20 @@ class AppTextStyle {
     fontSize: 12,
     fontWeight: FontWeight.w400,
   );
+
+  static TextStyle getResponsiveStyle(
+      BuildContext context, TextStyle baseStyle) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double scaleFactor = 1.0;
+
+    if (screenWidth > 1200) {
+      scaleFactor = 1.2;
+    } else if (screenWidth > 768) {
+      scaleFactor = 1.1;
+    }
+
+    return baseStyle.copyWith(
+      fontSize: (baseStyle.fontSize ?? 14) * scaleFactor,
+    );
+  }
 }

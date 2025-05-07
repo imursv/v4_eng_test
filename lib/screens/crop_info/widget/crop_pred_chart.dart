@@ -3,14 +3,15 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:v4/screens/common/style/text_styles.dart';
 
 class CropPredChart extends StatelessWidget {
-  final List<dynamic?> latestPred;
-  final List<dynamic?> latestActual;
+  final List<dynamic> latestPred;
+  final List<dynamic> latestActual;
   final List<String> date;
   final String actualName;
   final String predictedName;
   final String unit;
 
-  CropPredChart({
+  const CropPredChart({
+    super.key,
     required this.latestPred,
     required this.latestActual,
     required this.date,
@@ -37,7 +38,7 @@ class CropPredChart extends StatelessWidget {
       enable: true,
       activationMode: ActivationMode.singleTap,
       lineType: TrackballLineType.vertical,
-      tooltipSettings: InteractiveTooltip(
+      tooltipSettings: const InteractiveTooltip(
         enable: true,
         color: Colors.black54,
         textStyle: TextStyle(color: Colors.white),
@@ -48,11 +49,15 @@ class CropPredChart extends StatelessWidget {
       children: [
         // 차트 본체
         SfCartesianChart(
-          primaryXAxis: CategoryAxis(),
-          primaryYAxis: NumericAxis(
+          primaryXAxis: const CategoryAxis(),
+          primaryYAxis: const NumericAxis(
             rangePadding: ChartRangePadding.auto, // y축을 자동으로 설정
           ),
-          legend: Legend(isVisible: true, alignment: ChartAlignment.far),
+          legend: const Legend(
+            isVisible: true,
+            position: LegendPosition.top,
+            alignment: ChartAlignment.center,
+          ),
           tooltipBehavior: tooltipBehavior,
           trackballBehavior: trackballBehavior,
           series: <CartesianSeries<ChartData, String>>[
@@ -61,7 +66,7 @@ class CropPredChart extends StatelessWidget {
               xValueMapper: (ChartData data, _) => data.x,
               yValueMapper: (ChartData data, _) => data.y,
               name: actualName,
-              color: Color(0xFF67CEB8),
+              color: const Color(0xFF67CEB8),
               animationDuration: 0,
               markerSettings: MarkerSettings(
                 isVisible: actualData.length <= 12,
@@ -74,8 +79,8 @@ class CropPredChart extends StatelessWidget {
               xValueMapper: (ChartData data, _) => data.x,
               yValueMapper: (ChartData data, _) => data.y,
               name: predictedName,
-              color: Color(0xFF4F8A97),
-              dashArray: <double>[1, 5],
+              color: const Color(0xFF4F8A97),
+              dashArray: const <double>[1, 5],
               animationDuration: 0,
               markerSettings: MarkerSettings(
                 isVisible: actualData.length <= 12,
@@ -88,7 +93,7 @@ class CropPredChart extends StatelessWidget {
         // 차트 상단에 텍스트 추가
         Positioned(
           top: 15,
-          left: 10, 
+          left: 10,
           child: Text(
             unit,
             style: AppTextStyle.light12,
@@ -102,7 +107,7 @@ class CropPredChart extends StatelessWidget {
 // 차트 데이터 클래스를 정의
 class ChartData {
   final String x;
-  final dynamic? y;
+  final dynamic y;
 
   ChartData(this.x, this.y);
 }

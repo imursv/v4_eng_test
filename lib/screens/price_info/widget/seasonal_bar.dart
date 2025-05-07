@@ -6,39 +6,58 @@ class SeasonalBarWidget extends StatelessWidget {
   final List<String> selectedYears;
 
   const SeasonalBarWidget({
-    Key? key,
+    super.key,
     required this.seasonalIndex,
     required this.selectedYears,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
     // 최대값 설정 (Y축 범위에 맞춰서 설정)
     double maxBarValue = 1.5;
 
+    // xLabels 생성: 선택된 연도와 월을 포함한 타임라인 생성
     List<String> xLabels = [];
     List<String> years = List.from(selectedYears.where((year) => year != '평년'))
       ..sort();
 
-    int month = 1;
     for (var year in years) {
-      while (month <= 12 && xLabels.length < seasonalIndex.length) {
-        xLabels.add('$year.${month.toString().padLeft(2, '0')}');
-        month++;
+      for (int month = 1; month <= 12; month++) {
+        xLabels.add(
+            '${year.substring(2)}.${month.toString().padLeft(2, '0')}'); // 'YY.MM'
       }
-      month = 1;
     }
 
-    return Container(
+    // x축 레이블에 중복 제거
+    xLabels = xLabels.toSet().toList();
+
+    return SizedBox(
       height: 150,
       child: SfCartesianChart(
-        primaryXAxis: CategoryAxis(),
+        primaryXAxis: const CategoryAxis(
+          majorGridLines: MajorGridLines(width: 0),
+          labelRotation: 0,
+          interval: 1,
+          labelStyle: TextStyle(
+            color: Color(0xFF666C77),
+            fontSize: 12,
+          ),
+        ),
         primaryYAxis: NumericAxis(
           minimum: 0,
           maximum: maxBarValue,
           interval: 1,
+          majorGridLines: const MajorGridLines(
+            width: 0.5,
+            color: Color(0xFFEEEEEE),
+          ),
+          labelStyle: const TextStyle(
+            color: Color(0xFF666C77),
+            fontSize: 12,
+          ),
         ),
         series: <CartesianSeries>[
+          // 실제 데이터 막대 시리즈
           StackedColumnSeries<double, String>(
             dataSource: seasonalIndex,
             xValueMapper: (data, index) => xLabels[index],
@@ -55,7 +74,6 @@ class SeasonalBarWidget extends StatelessWidget {
             color: Colors.grey.withOpacity(0.3),
             animationDuration: 500,
           ),
-          // 실제 데이터 막대 시리즈
         ],
       ),
     );

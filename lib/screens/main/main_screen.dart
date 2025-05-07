@@ -261,7 +261,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                             ),
                                             Spacer(),
                                             Text(
-                                              '100',
+                                              '100%',
                                               style: AppTextStyle.regular12,
                                             ),
                                           ],
@@ -287,7 +287,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                             ),
                                             Spacer(),
                                             Text(
-                                              '100',
+                                              '100%',
                                               style: AppTextStyle.regular12,
                                             ),
                                           ],
@@ -375,11 +375,11 @@ class _MainDashboardState extends State<MainDashboard> {
                                       MainTopRowWidget(dataRows: [
                                         {
                                           'Actual(${mainData.cropInfo.currentDate})':
-                                              '${mainData.cropInfo.actualProductionCurrentYear}'
+                                              formatCurrency(mainData.cropInfo.actualProductionCurrentYear)
                                         },
                                         {
                                           'Predicted(${mainData.cropInfo.predictedDate})':
-                                              '${mainData.cropInfo.forecastedProductionNextYear}'
+                                              formatCurrency(mainData.cropInfo.forecastedProductionNextYear)
                                         },
                                         {
                                           'Compared to Standard':
@@ -390,11 +390,11 @@ class _MainDashboardState extends State<MainDashboard> {
                                         dataRows: [
                                           [
                                             'Avg. Year',
-                                            '${mainData.cropInfo.averageYield}'
+                                            formatCurrency(mainData.cropInfo.averageYield)
                                           ],
                                           [
                                             'Last Year',
-                                            '${mainData.cropInfo.lastYearYield}'
+                                            formatCurrency(mainData.cropInfo.lastYearYield)
                                           ],
                                           [
                                             'Yield per 10a',

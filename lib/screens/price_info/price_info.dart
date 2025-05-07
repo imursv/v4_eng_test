@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:v4/data/mock/price_mockup_data.dart';
 // import 'package:v4/screens/common/appbar.dart';
 import 'package:v4/screens/common/drawer.dart';
 import 'package:v4/screens/common/footer.dart';
@@ -77,7 +78,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
     final data = await _priceService.fetchPriceInfo();
     if (mounted) {
       setState(() {
-        priceMockupData = data;
+        priceMockupData = priceMockData;
       });
       _updateYearColorMap();
       _updateGradeColorMap();
@@ -426,6 +427,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
                                                     ],
                                                   ],
                                           ),
+                                          const SizedBox(height: 16),
                                           YearButtonWidget(
                                             availableYears: availableYears,
                                             selectedYears: selectedYears,
@@ -440,6 +442,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
                                             yearColorMap: yearColorMap,
                                             isContinuousView: false,
                                           ),
+                                          const SizedBox(height: 8),
                                           YearButtonWidget(
                                             availableYears: availableGrades,
                                             selectedYears: selectedGrades,
@@ -573,6 +576,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
                                                         ['Signal Index', ''],
                                                       ],
                                           ),
+                                          const SizedBox(height: 16),
                                           YearButtonWidget(
                                             availableYears: availablePredYears,
                                             selectedYears: selectedPredYears,
@@ -587,6 +591,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
                                             yearColorMap: yearPredColorMap,
                                             isContinuousView: false,
                                           ),
+                                          const SizedBox(height: 8),
                                           GradeButtonWidget(
                                             onGradeChanged:
                                                 (newSelectedForecast) {
@@ -599,6 +604,7 @@ class _PriceInfoPageState extends State<PriceInfoPage> {
                                             btnNames: availablePredGrades,
                                             selectedBtn: selectedPredGrades,
                                           ),
+                                          const SizedBox(height: 16),
                                           TrendChart(
                                             latestPred: predProductionData,
                                             latestActual:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:v4/data/mock/growth_mock.dart';
 import 'package:v4/screens/common/drawer.dart';
 import 'package:v4/screens/common/footer.dart';
 import 'package:v4/screens/common/header.dart';
@@ -88,10 +89,10 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
   }
 
   Future<void> loadGrowthInfo() async {
-    final data = await _growthService.fetchGrowhInfo();
+    // final data = await _growthService.fetchGrowhInfo();
     if (mounted) {
       setState(() {
-        growthMockupData = data;
+        growthMockupData = growthMockData;
       });
       _updateYearColorMap();
       _updateChartData();
@@ -163,6 +164,8 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
     predProductionData = _getValidData(
         forecastPredData[selectedPredYear]?[forecastPredType] ?? []);
     date = List<String>.from(forecastPredData[selectedPredYear]['date'] ?? []);
+    print('predProductionData>> $predProductionData');
+    print('date>> $date');
 
     predCurrProductionData = [0, 0, 0, 0, 0];
 
@@ -191,12 +194,8 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
 
   void _updateDoughnutChart(int totalCost) {
     setState(() {
-      currentCostRatio = totalCost == 0
-          ? 0
-          : totalCost /
-              (calculationData['FinalCost'] +
-                  (totalCost - calculationData['CurrentCost'])) *
-              100;
+      currentCostRatio =
+          totalCost == 0 ? 0 : totalCost / (calculationData['FinalCost']) * 100;
 
       estimatedProfitRatio = totalCost == 0
           ? 0
@@ -391,6 +390,7 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
                                                   ],
                                                 ],
                                               ),
+                                              const SizedBox(height: 8),
                                               GradeButtonWidget(
                                                 onGradeChanged:
                                                     (newSelectedForecast) {
@@ -407,6 +407,7 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
                                                 ],
                                                 selectedBtn: '기온',
                                               ),
+                                              const SizedBox(height: 8),
                                               YearButtonWidget(
                                                 availableYears: availableYears,
                                                 selectedYears: selectedYears,
@@ -438,7 +439,7 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
                                                 },
                                                 yearColorMap: yearColorMap,
                                                 unit: selectedForecast == '기온'
-                                                    ? '(°F)'
+                                                    ? '(°C)'
                                                     : '',
                                                 hoverText:
                                                     selectedForecast == '기온'
@@ -574,6 +575,7 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
                                                 ],
                                                 selectedBtn: '기온',
                                               ),
+                                              const SizedBox(height: 8),
                                               GradeButtonWidget(
                                                 onGradeChanged:
                                                     (newSelectedForecast) {
@@ -655,10 +657,7 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
                                                       flex: 1,
                                                       child: DoughnutChart(
                                                         value: calculationData[
-                                                                'StandardAverageProfit'] /
-                                                            calculationData[
-                                                                'StandardAverageSales'] *
-                                                            100,
+                                                            'RevenueRate'],
                                                         title:
                                                             'Std. Profit Rate',
                                                         color: const Color(
@@ -761,7 +760,7 @@ class _GrowthInfoPageState extends State<GrowthInfoPage> {
                                 const Footer(),
                               ],
                             )
-                          : const Text('data'),
+                          : const Text('Loading'),
                     );
                   }
                 },

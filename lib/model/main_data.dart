@@ -19,7 +19,7 @@ class MainData {
       optimalPurchaseTime: json['optimal_purchase_time'] ?? '',
       priceInfo: PriceInfo.fromJson(json['price_info'] ?? {}),
       growthInfo: GrowthInfo.fromJson(json['growth_info'] ?? {}),
-      cropInfo: CropInfo.fromJson(json['harvest_info'] ?? {}),
+      cropInfo: CropInfo.fromJson(json['crop_info'] ?? {}),
     );
   }
 }

@@ -44,19 +44,18 @@ class _CropInfoPageState extends State<CropInfoPage> {
     const Color(0xFFFF9500),
     const Color(0xFFF8D32D),
     const Color(0xFF78B060),
+    const Color(0xFF0084FF),
+    const Color(0xFF9568EE),
+    const Color(0xFFFF9500),
+    const Color(0xFFF8D32D),
+    const Color(0xFF78B060),
+    const Color(0xFF0084FF),
+    const Color(0xFF9568EE),
+    const Color(0xFFFF9500),
+    const Color(0xFFF8D32D),
+    const Color(0xFF78B060),
   ];
-  List<String> regionNames = [
-    '경기도',
-    '강원도',
-    '충청북도',
-    '충청남도',
-    '전라북도',
-    '전라남도',
-    '경상북도',
-    '경상남도',
-    '제주도',
-    '전체'
-  ];
+ 
   List<dynamic> marketOptions = [];
   //분석
   List<List<dynamic>> cropInfo = [];
@@ -178,12 +177,12 @@ class _CropInfoPageState extends State<CropInfoPage> {
       ['Yield per 10a(2024)', actAnalysis['production_per_10a'], 'kg'],
       [
         'Avg. Year',
-        formatCurrency(actAnalysis['value_compared_last_value']),
+        formatCurrency(actAnalysis['value_compared_average_year']),
         'ton'
       ],
       [
         'Last Year',
-        formatCurrency(actAnalysis['value_compared_last_year']),
+        formatCurrency(actAnalysis['value_compared_last_value']),
         'ton'
       ],
       [

@@ -35,7 +35,8 @@ class DiagnosisTableWidget extends StatelessWidget {
       children: [
         TableRow(
           children: [
-            _buildTitleValueCell('Grade', diagnosisData['grade']),
+            // _buildTitleValueCell('Grade', diagnosisData['grade']),
+            _buildTitleValueCell('Grade', 'High'),
             _buildTitleValueCell('Forecast Yield', diagnosisData['yield']),
             _buildTitleValueCell('Growth Index', diagnosisData['GrowthIndex']),
           ],
